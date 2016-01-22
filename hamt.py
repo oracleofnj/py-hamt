@@ -127,13 +127,19 @@ class HAMT(object):
                 # logging.debug("---------- end set %r %d %r %d" % (key, keyHash, val, self.level))
 
         def __str__(self):
-            entriesList = ["%s" % ((self.entries[HAMT.popcount(self.entryBitmap & ((1 << i) - 1))]),) \
+            entryTuples = [(self.entries[HAMT.popcount(self.entryBitmap & ((1 << i) - 1))], 0 != self.typeBitmap & (1 << i)) \
                             for i in xrange(1 << HAMT.wordsize) if self.entryBitmap & (1 << i)]
-            entriesString = '[\n' + '\t' * (self.level + 1) + ('\n' + '\t' * (self.level + 1)).join(entriesList) + \
-                            '\n' + '\t' * self.level + ']'
-            ##     \n]' % (',\n\t'.join(entriesList))
-            return '{\n\t"level": %d, \n\t"entryBitmap": "%s", \n\t"typeBitmap": "%s", \n\t"entries": %s}' % (
-                self.level, bin(self.entryBitmap), bin(self.typeBitmap), entriesString
+            entriesList = ['{"entryType": "subTable", "contents": %s}' % entryTuple[0] \
+                            if entryTuple[1] else \
+                            '{"entryType": "keyValPair", "contents": {"key": "%s", "val": %d}}' % (entryTuple[0][0], entryTuple[0][1])
+                            for entryTuple in entryTuples]
+            entriesString = '[\n' + '\t' * (self.level + 1) + (',\n' + '\t' * (self.level + 1)).join(entriesList) + \
+                            '\n' + '\t' * (self.level)+ ']'
+            return '{\n%s"level": %d, \n%s"entryBitmap": "%s", \n%s"typeBitmap": "%s", \n%s"entries": %s}' % (
+                '\t' * (self.level), self.level,
+                '\t' * (self.level), bin(self.entryBitmap),
+                '\t' * (self.level), bin(self.typeBitmap),
+                '\t' * (self.level), entriesString
             )
 
     def __init__(self):
